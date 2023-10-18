@@ -56,12 +56,14 @@ abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
 
   @override
   Future<Data>? get future {
-    return _future ?? (value is Data ? Future.value(value as Data) : null);
+    final future = value is Data ? Future.value(value as Data) : null;
+    return _future ?? future;
   }
 
   @override
   Stream<Data>? get stream {
-    return _stream ?? (value is Data ? Stream.value(value as Data) : null);
+    final stream = value is Data ? Stream.value(value as Data) : null;
+    return _stream ?? stream?.asBroadcastStream();
   }
 
   /// Sets the [Future] for this `AsyncNotifier`, updating its state.
