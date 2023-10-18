@@ -142,6 +142,14 @@ abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
     );
   }
 
+  /// Unsubscribes to existing [Future] or [Stream] and sets [snapshot] to 'none'.
+  void cancel() {
+    _unsubscribe();
+    snapshot = value is Data
+        ? AsyncSnapshot.withData(ConnectionState.none, value as Data)
+        : const AsyncSnapshot.nothing();
+  }
+
   void _unsubscribe() {
     _subscription?.cancel();
     _subscription = null;
