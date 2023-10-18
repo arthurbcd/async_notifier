@@ -80,16 +80,12 @@ abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
   /// ```
   set future(Future<Data>? future) {
     if (_future == future) return;
+    if (future == null) return cancel();
     _unsubscribe();
 
-    if (future == null) {
-      snapshot = const AsyncSnapshot.nothing();
-      return;
-    }
     _future = future;
-
-    snapshot = snapshot.hasData
-        ? snapshot.inState(ConnectionState.waiting)
+    snapshot = value is Data
+        ? AsyncSnapshot.withData(ConnectionState.waiting, value as Data)
         : const AsyncSnapshot.waiting();
 
     _future?.then(
@@ -122,16 +118,12 @@ abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
   /// ```
   set stream(Stream<Data>? stream) {
     if (_stream == stream) return;
+    if (stream == null) return cancel();
     _unsubscribe();
 
-    if (stream == null) {
-      snapshot = const AsyncSnapshot.nothing();
-      return;
-    }
     _stream = stream.asBroadcastStream();
-
-    snapshot = snapshot.hasData
-        ? snapshot.inState(ConnectionState.waiting)
+    snapshot = value is Data
+        ? AsyncSnapshot.withData(ConnectionState.waiting, value as Data)
         : const AsyncSnapshot.waiting();
 
     _subscription = _stream?.listen(
