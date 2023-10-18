@@ -14,7 +14,7 @@ extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
   /// Example:
   /// ```dart
   /// snapshot.when(
-  ///   none: () => Text('Idle'),
+  ///   none: () => Text('No error or data'),
   ///   data: (data) => Text('Data: $data'),
   ///   error: (error, stack) => Text('Error: $error'),
   ///   loading: () => CircularProgressIndicator(),
@@ -44,17 +44,14 @@ extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
         return reloading?.call(this.data as T) ?? loading();
 
       case ConnectionState.active:
-        assert(this.data is T, _unexpectedSnapshotMessage);
         if (this.data is! T) return loading();
         return reloading?.call(this.data as T) ?? data(this.data as T);
 
       case ConnectionState.done:
-        assert(this.data is T || none != null, _unexpectedSnapshotMessage);
         if (this.data is! T) return none?.call() ?? data(requireData);
         return data(this.data as T);
     }
   }
 
-  String get _unexpectedSnapshotMessage =>
-      'Unexpected Snapshot: Expected $T or error, but got ${data.runtimeType} on $connectionState';
+
 }
