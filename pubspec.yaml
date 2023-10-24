@@ -1,6 +1,6 @@
 name: async_notifier
-description: A ValueNotifier extension for all async states. Listen, notify, and manage loading, error and data in one place.
-version: 0.1.0
+description: A ValueNotifier for all async states. Listen, notify, and manage loading, error and data in one place.
+version: 0.1.1
 homepage: https://www.branvier.com
 
 environment:
