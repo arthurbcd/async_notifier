@@ -1,41 +1,92 @@
 # AsyncNotifier
 
-A ValueNotifier extension for all async states. Listen, notify, and manage loading, error, and data in one place.
+A ValueNotifier for all async states. Listen, notify, and manage loading, error, and data in one place.
 
 ## Usage
 
-`AsyncNotifier` is essentially a `ValueNotifier` with two new setters: `future` and `stream`. All it's states are resolved into an `AsyncSnapshot`. Due to it's nature, it's easily integrated with Flutter own widgets and classes, making it simple and native.
+`AsyncNotifier` is essentially a `ValueNotifier` with two new setters: `future` and `stream`. All it's states are resolved into an `AsyncSnapshot`. Due to it's nature, it's easily integrated with Flutter own widgets and classes, making it simple and straightforward. Two objects we all know, working together as one.
 
-Here's a simple overview example to demonstrate how to use `AsyncNotifier`.
+- Here's a simple overview:
 
 ```dart
 import 'package:async_notifier/async_notifier.dart';
 
 void main() {
-  // easy side effects.
-  final notifier = AsyncNotifier(0, onData: (data) {}, onError: (e,s) {});
+  // Easy side effects.
+  final counter = AsyncNotifier(0, onData: .., onError: ..);
 
-  // listen to all snapshots.
-  notifier.addListener(() {
-    print("New state: ${notifier.snapshot}");
+  // Listenable.
+  counter.addListener(() {
+    print("New state: ${counter.snapshot}");
   });
 
-  // Set a Future
-  notifier.future = Future.value(42);
+  // The same ValueNotifier we all know ...
+  counter.value = 1;
 
-  await notifier.future.then(print); // 42
-  print (notifier.value) // 42
+  // ... with two new setters:
+  counter.future = Future.value(42);
+  counter.stream = Stream.fromIterable([1, 2, 3]);
 
-  // Set a Stream
-  notifier.stream = Stream.fromIterable([1, 2, 3]);
+  // Get all async states in 1 place:
+  counter.isLoading
+  counter.isReloading
+  counter.future
+  counter.stream
+  counter.requireData
+  counter.hasData
+  counter.hasError
+  counter.error
+  counter.stackTrace
+
+  // Control its states:
+  counter.cancel(); // works for future!
+  counter.dispose();
+
+  // And resolve them with ease:
+  final result = counter.when(
+    data: (data) => 'Data $data',
+    error: (error, stackTrace) => 'Error $error',
+    loading () => 'Loading',
+  );
 }
 ```
 
 ### Benefits
 
-- Simplified State Management: No need to manually manage separate variables for loading, error, and data states.
-- Easy to Use: Just set the Future or Stream and let AsyncNotifier handle the rest.
-- Reactive: Automatically notifies listeners when the state changes
+- Simplified State Management: No need to manually manage separate variables for loading, error, data states and more.
+- Easy to Use: Just set the `future` or `stream` and let `AsyncNotifier` handle the rest.
+- Reactive: Automatically notifies listeners when the each state changes
+
+### Advanced
+
+Internally, `AsyncNotifier<T>` is an implementation of `AsyncListenableBase<T,Data>`.
+
+Where:
+
+- `T` is the `ValueNotifier<T>`
+- `Data` is the `AsyncSnapshot<Data>`
+- `Data` extends `T`
+
+So when you are typing `AsyncNotifier<T>` you are also typing `Data` as `T`.
+
+Which is good, and works well with non-nullables like `AsyncNotifier(0)`. But there are cases where you don't have an initial value, and you'd have to do `AsyncNotifier<User?>(null)`.
+
+Doing this will also type the internal `Data` type as `Data?`, resulting in all your getters to be nullable. Ex: `Future<User?>` instead of `Future<User>`, which is bad for type safety.
+
+For those cases use `AsyncNotifier.late<T>`.
+
+The late constructor is an implementation of `AsyncListenableBase<T?, Data>`, which allows you
+to work with an optional initial value and later with a non-nullable `Data` in all your async operations!
+
+- TLDR:
+
+```dart
+// use AsyncNotifier<T> for value T and data T.
+final todos = AsyncNotifier(<Todo>[]);
+
+// use AsyncNotifier.late<T> for value T? and data T.
+final user = AsyncNotifier.late<User>();
+```
 
 ### State Management
 
@@ -44,33 +95,29 @@ You can listen to all AsyncNotifier states directly and bind it to other objects
 ```dart
 class MyNotifier extends ChangeNotifier {
   MyNotifier() {
-    // binds to ChangeNotifier to propagate its changes.
-    _todos.addListener(notifyListeners);
+    _todos.addListener(notifyListeners); // notifies ChangeNotifier
+
+    getTodos(); // init
   }
 
   final _todos = AsyncNotifier(<Todo>[]);
 
-  //all states
-  bool get isLoading => _todos.isLoading;
-  Future<List<Todo>> get todosFuture => _todos.future;
-  Stream<List<Todo>> get todosStream => _todos.stream;
-  Object? get error => _todos.error;
-
-  //or as listenable
   AsyncListenable<List<Todo>> get todosListenable => _todos;
-  List<Todo> todos => _todos.value.toList(); // copy.
+
+  List<Todo> get todos => _todos.value.toList(); // copy
+
+  void getTodos() {
+    _todos.future = _repository.getAllTodos();
+  }
 
   void addTodo(Todo todo) {
     _todos.value = todos..add(todo);
   }
 
-  void getTodos() {
-    _todos.future = _repository.getAllTodos();
-  }
 }
 ```
 
-### Consuming the state
+### Consuming the State
 
 You can use Flutter native solutions like `ListenableBuilder`.
 
@@ -88,7 +135,7 @@ class TodoList extends StatelessWidget {
       listenable: todosListenable,
       builder: (context, _) {
 
-        // Use `when` for resolving AsyncSnapshot states.
+        // Use `when` for resolving AsyncNotifier states.
         return todosListenable.when(
           loading: () => const CircularProgressIndicator(),
           error: (error, stackTrace) => Text('Error: $error'),
@@ -111,7 +158,7 @@ class TodoList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final todosListenable = context.watch<AsyncListenable<List<Todo>>>;
+    final todosListenable = context.watch<MyNotifier>().todosListenable;
 
     // Use `when` for resolving AsyncSnapshot states.
     return todosListenable.when(
