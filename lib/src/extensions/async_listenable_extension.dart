@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../async_notifier.dart';
 import '../async_listenable_base.dart';
 import 'async_snapshot_extension.dart';
 
@@ -54,4 +56,34 @@ extension AsyncListenableNullableExtension<T, Data extends T>
     on AsyncListenableBase<T?, Data?> {
   /// Returns latest data received, failing if there is no data.
   T get requireData => value ?? snapshot.requireData!;
+}
+
+class MyWidget extends StatelessWidget {
+  const MyWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final n = AsyncNotifier<int>(0);
+
+    final value = context.listen(n);
+
+    return const Placeholder();
+  }
+}
+
+extension ContextListenable on BuildContext {
+  T listen<T>(ValueListenable<T> listenable, [ValueChanged<T>? onChanged]) {
+    void _listener() {
+      if (mounted && this is Element) (this as Element).markNeedsBuild();
+      onChanged?.call(listenable.value);
+    }
+
+    listenable.addListener(_listener);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      listenable.removeListener(_listener);
+    });
+
+    return listenable.value;
+  }
 }
