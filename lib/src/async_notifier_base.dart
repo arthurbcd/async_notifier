@@ -14,10 +14,11 @@ typedef ErrorCallback = void Function(Object error, StackTrace? stackTrace);
 abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
     implements AsyncListenableBase<T, Data> {
   /// Base constructor for `AsyncNotifier` and `AsyncNotifierLate`.
-  AsyncNotifierBase(super._value, {this.onData, this.onError})
+  AsyncNotifierBase(this._value, {this.onData, this.onError})
       : _snapshot = _value is Data
             ? AsyncSnapshot.withData(ConnectionState.none, _value)
-            : const AsyncSnapshot.nothing();
+            : const AsyncSnapshot.nothing(),
+        super(_value);
 
   /// Called when [AsyncSnapshot] resolves with new data.
   final DataChanged<Data>? onData;
@@ -25,6 +26,7 @@ abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
   /// Called whenever [AsyncSnapshot] resolves with error.
   final ErrorCallback? onError;
 
+  T _value;
   Future<Data>? _future;
   Stream<Data>? _stream;
   AsyncSnapshot<Data> _snapshot;
@@ -34,8 +36,11 @@ abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
   AsyncSnapshot<Data> get snapshot => _snapshot;
 
   @override
+  T get value => _value;
+
+  @override
   set value(T value) {
-    if (super.value == value) return;
+    if (_value == value) return;
     snapshot = value is Data
         ? AsyncSnapshot.withData(snapshot.connectionState, value)
         : AsyncSnapshot<Data>.nothing().inState(snapshot.connectionState);
@@ -47,9 +52,10 @@ abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
     final data = (_snapshot = snapshot).data;
 
     if (data is T && data != value && !snapshot.hasError) {
-      super.value = data;
+      _value = data;
+      notifyListeners();
       onData?.call(data);
-      return; // prevent notifyListeners since super.value already did.
+      return; // prevent another notifyListeners.
     }
     notifyListeners();
   }
@@ -140,6 +146,18 @@ abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
         snapshot = _snapshot.inState(ConnectionState.done);
       },
     );
+  }
+
+  /// Sets the [value]. If [notify] is `false`, can't notify listeners.
+  void setValue(T value, {bool notify = true}) {
+    if (notify) {
+      this.value = value;
+    } else {
+      _value = value;
+      _snapshot = value is Data
+          ? AsyncSnapshot.withData(snapshot.connectionState, value)
+          : AsyncSnapshot<Data>.nothing().inState(snapshot.connectionState);
+    }
   }
 
   /// Unsubscribes to existing [Future] or [Stream] and sets [snapshot] to 'none'.
