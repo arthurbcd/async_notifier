@@ -5,18 +5,27 @@ extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
   /// Allows you to define custom behavior for different states of an [AsyncSnapshot]
   /// by providing callbacks for `data`, `error`, `loading`, and `none`.
   ///
-  /// - [data] Callback invoked when the snapshot contains data of type [T].
-  /// - [error] Callback invoked when the snapshot contains an error.
-  /// - [loading] Callback invoked when the snapshot is waiting for data.
-  /// - [none] Optional callback invoked when the snapshot has no data or error.
+  /// - [data] Callbacks when snapshot has [T] data.
+  /// - [error] Callbacks when snapshot [hasError].
+  /// - [loading] Callbacks when snapshot [isLoading] and [hasNone].
+  /// - [none] Optionally callbacks when snapshot not [isLoading] and [hasNone].
+  ///
+  /// Use [none] for uncommon scenarios where [data], [error], and [loading] are
+  /// not applicable. For instance, to display a widget when there's no data, no
+  /// error, and no ongoing loading, or when a [Stream] is cancelled without
+  /// emitting any data or error (e.g [Stream.empty]).
+  ///
+  /// If [none] is not provided:
+  /// - [loading] will be called when init [hasNone].
+  /// - [StateError] will be thrown when done [hasNone].
   ///
   /// Example:
   /// ```dart
   /// snapshot.when(
-  ///   none: () => Text('No error or data'),
   ///   data: (data) => Text('Data: $data'),
   ///   error: (error, stack) => Text('Error: $error'),
   ///   loading: () => CircularProgressIndicator(),
+  ///   none: () => Text('No error or data'),
   /// );
   /// ```
   R when<R>({
@@ -39,10 +48,18 @@ extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
         return loading();
 
       case ConnectionState.done:
-        return none?.call() ?? data(requireData);
+        return none?.call() ?? data(requireData); //throws StateError
     }
   }
 
   /// Returns whether this snapshot has neither data nor error.
   bool get hasNone => !hasData && !hasError;
+
+  /// Returns whether this snapshot is computing.
+  bool get isLoading =>
+      connectionState == ConnectionState.waiting ||
+      connectionState == ConnectionState.active;
+
+  /// Returns whether this snapshot is computing and [hasData].
+  bool get isReloading => (hasData || hasError) && isLoading;
 }
