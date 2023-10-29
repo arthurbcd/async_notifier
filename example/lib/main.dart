@@ -46,15 +46,18 @@ class BookRepository {
 
 class TodosNotifier extends ChangeNotifier {
   TodosNotifier() {
-    _books.addListener(notifyListeners);
     fetchBooks();
   }
 
   final _repository = BookRepository();
   final messengerkey = GlobalKey<ScaffoldMessengerState>();
 
-  // all async states
-  late final _books = AsyncNotifier(<Book>[], onData: _onData);
+  // Use `sync` to bind your ValueNotifier to this ChangeNotifier
+  // Use ValueNotifier for synchronous data
+  late final _ascending = ValueNotifier(true).sync(this);
+
+  // Use AsyncNotifier for asynchronous data
+  late final _books = AsyncNotifier(<Book>[], onData: _onData).sync(this);
 
   void _onData(List<Book> books) async {
     await _repository.saveBooks(books);
@@ -63,11 +66,20 @@ class TodosNotifier extends ChangeNotifier {
     );
   }
 
-  List<Book> get books => _books.value.toList();
+  List<Book> get books {
+    final list = isAscending ? _books.value : _books.value.reversed;
+    return list.toList();
+  }
 
   String? get errorMessage => _books.error?.toString();
 
   bool get isLoading => _books.isLoading;
+
+  bool get isAscending => _ascending.value;
+
+  void toggleSort() {
+    _ascending.value = !_ascending.value;
+  }
 
   void fetchBooks() {
     _books.stream = _repository.streamBooks();
@@ -95,31 +107,46 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       scaffoldMessengerKey: notifier.messengerkey,
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
+        appBar: AppBar(
+          title: const Text('AsyncNotifier'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: notifier.fetchBooks,
+            ),
+            IconButton(
+              icon: const Icon(Icons.sort),
+              onPressed: () => notifier.toggleSort(),
+            ),
+          ],
+        ),
         body: Center(
           child: RefreshIndicator(
             onRefresh: () async => notifier.fetchBooks(),
             child: ListenableBuilder(
-                listenable: notifier,
-                builder: (context, _) {
-                  if (notifier.isLoading) {
-                    return const CircularProgressIndicator();
-                  }
-                  return ListView.builder(
-                    itemCount: notifier.books.length,
-                    itemBuilder: (context, index) {
-                      final todo = notifier.books[index];
+              listenable: notifier,
+              builder: (context, _) {
+                if (notifier.isLoading) {
+                  return const CircularProgressIndicator();
+                }
+                return ListView.builder(
+                  itemCount: notifier.books.length,
+                  itemBuilder: (context, index) {
+                    final todo = notifier.books[index];
 
-                      return ListTile(
-                        title: Text(todo.title),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => notifier.removeBook(todo),
-                        ),
-                      );
-                    },
-                  );
-                }),
+                    return ListTile(
+                      title: Text(todo.title),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => notifier.removeBook(todo),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ),
         floatingActionButton: FloatingActionButton(
