@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_use_of_protected_member
+
 import 'dart:async';
 
 import 'package:async_notifier/async_notifier.dart';
@@ -268,51 +270,91 @@ void main() {
   });
 
   test('AsyncNotifier.when', () async {
-    final string = AsyncNotifier.late<String>();
+    final state = AsyncNotifier.late<String>();
 
     String when() {
-      return string.when(
-        data: (data) => 'data: $data',
+      return state.when(
+        data: (data) => '${state.isReloading ? 'reloading' : 'data'}: $data',
         error: (e, s) => 'error $e',
         loading: () => 'loading',
-        reloading: (data) => 'reloading: $data',
         none: () => 'none',
       );
     }
 
     expect(when(), 'none');
 
-    string.future = Future.value('✅');
+    state.future = Future.value('✅');
     expect(when(), 'loading');
 
-    await string.future;
+    await state.future;
     expect(when(), 'data: ✅');
 
-    string.stream = Stream.value('🔁');
+    state.stream = Stream.value('🔁');
     expect(when(), 'reloading: ✅');
 
-    await string.stream!.single;
+    await state.stream!.single;
     expect(when(), 'data: 🔁');
 
-    string.future = Future.error('❌');
+    state.future = Future.error('❌');
     expect(when(), 'reloading: 🔁');
 
-    await string.future!.catchError((_) => '');
+    await state.future!.catchError((_) => '');
     expect(when(), 'error ❌');
 
-    string.future = null;
-    expect(when(), 'none');
+    state.future = null;
+    expect(when(), 'data: 🔁');
 
-    string.stream = const Stream.empty();
+    state.value = null;
+    expect(when(), 'none');
+    expect(state.hasNone, true);
+
+    state.stream = const Stream.empty();
     expect(when(), 'loading');
 
-    await string.stream?.toList();
+    await state.stream?.toList();
     expect(when(), 'none');
 
-    string.stream = Stream.error('❌');
+    state.stream = Stream.error('❌');
     expect(when(), 'loading');
 
-    await string.stream!.single.catchError((_) => '');
+    await state.stream!.single.catchError((_) => '');
     expect(when(), 'error ❌');
+  });
+
+  group('extension', () {
+    final state = ValueNotifier(0);
+    test('ValueNotifier.setValue', () {
+      expect(state.value, 0);
+      state.setValue(1);
+      expect(state.value, 1);
+    });
+
+    test('ValueListenable.listen', () {
+      num count = 0;
+      expect(state.hasListeners, false);
+
+      final remover = state.listen((n) => count = n);
+      expect(state.hasListeners, true);
+
+      state.value = 2;
+      expect(count, 2);
+
+      remover();
+      expect(state.hasListeners, false);
+    });
+
+    test('Listenable.sync', () {
+      var called = 0;
+      final notifier = ChangeNotifier();
+      notifier.addListener(() => called++);
+
+      final state = ValueNotifier(false).sync(notifier);
+      expect(called, 0);
+      expect(state.value, false);
+
+      state.value = true;
+      expect(called, 1);
+      expect(state.value, true);
+    });
   });
 }
