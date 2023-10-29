@@ -2,6 +2,18 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.0 - Oct 29, 2023
+
+- BREAKING CHANGE: Removed `reloading` parameter from `when` extension. Use `isReloading` inside `data` parameter instead.
+- Adds `hasNone` extension to `AsyncSnapshot` and `AsyncNotifier`.
+- Adds `setValue` in `AsyncNotifier` with `notify = true` optional parameter.
+- Adds `setValue` as an extension to `ValueNotifier`.
+- Adds `listen` method as an extension to `ValueListenable`.
+- Adds `sync` method as an extension to `Listenable`.
+- Updated documentation of extensions.
+- Updated example.
+- Updated tests.
+
 ## 0.1.1 - Oct 18, 2023
 
 - Adds `cancel()` method to `AsyncNotifier`:
