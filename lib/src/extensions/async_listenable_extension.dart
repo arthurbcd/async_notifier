@@ -7,19 +7,20 @@ import 'async_snapshot_extension.dart';
 /// Extension for [AsyncListenableBase].
 extension AsyncListenableBaseExtension<T, Data extends T>
     on AsyncListenableBase<T, Data> {
-  /// Whether [future] or [stream] is computing for the first time.
-  bool get isLoading => snapshot.connectionState == ConnectionState.waiting;
+  /// Returns whether [future] or [stream] is computing.
+  bool get isLoading => snapshot.isLoading;
 
-  /// Whether [future] or [stream] is recomputing.
-  bool get isReloading =>
-      (hasData || hasError) &&
-      (isLoading || snapshot.connectionState == ConnectionState.active);
+  /// Returns whether [future] or [stream] is computing and [hasData].
+  bool get isReloading => snapshot.isReloading;
 
-  /// Whether [future] or [stream] threw an error.
+  /// Returns whether [future] or [stream] has an error.
   bool get hasError => snapshot.hasError;
 
-  /// Whether [future] or [stream] has data.
+  /// Returns whether [future] or [stream] has data.
   bool get hasData => snapshot.hasData;
+
+  /// Returns whether this snapshot has neither data nor error.
+  bool get hasNone => snapshot.hasNone;
 
   /// The current error of [future] or [stream].
   Object? get error => snapshot.error;
@@ -29,9 +30,6 @@ extension AsyncListenableBaseExtension<T, Data extends T>
 
   /// The current [ConnectionState] of [future] or [stream].
   ConnectionState get connectionState => snapshot.connectionState;
-
-  /// Whether this snapshot has neither data nor error.
-  bool get hasNone => snapshot.hasNone;
 
   /// Handles different states of this [snapshot].
   ///
