@@ -13,6 +13,9 @@ analyzer:
     included_file_warning: ignore
 linter:
   rules:
+    # False positives with tear-offs.
+    use_setters_to_change_properties: false
+
     # Conflicts with ignored parameters (final _) =>. Unnecessary final.
     prefer_final_parameters: false
 
