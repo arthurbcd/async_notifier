@@ -20,4 +20,25 @@ extension AsyncValueListenableExtension<T> on ValueListenable<T> {
   }) {
     return AsyncNotifierLate(value: value, onData: onData, onError: onError);
   }
+
+  /// Listens to [ValueListenable] and returns a [VoidCallback] remover.
+  ///
+  /// Example:
+  /// ```dart
+  /// final notifier = ValueNotifier(0);
+  ///
+  /// final remover = notifier.listen((value) => print(value));
+  /// notifier.value = 1; // prints 1
+  ///
+  /// remover(); // removes the listener
+  /// notifier.value = 2; // does not print
+  /// ```
+  VoidCallback listen(ValueChanged<T> onValue) {
+    void listener() {
+      onValue(value);
+    }
+
+    addListener(listener);
+    return () => removeListener(listener);
+  }
 }
