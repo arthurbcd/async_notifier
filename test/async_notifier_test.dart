@@ -200,7 +200,7 @@ void main() {
 
     expect(data, 1);
     expect(n.value, 1);
-    expect(n.isLoading, false);
+    expect(n.isLoading, true);
     expect(n.hasError, true);
     expect(n.error, error);
     expect(n.connectionState, ConnectionState.active);
@@ -258,7 +258,7 @@ void main() {
     expect(n.value, 1);
     expect(n.error, isNot(error));
     expect(n.hasError, false);
-    expect(n.isLoading, false);
+    expect(n.isLoading, true);
     expect(n.isReloading, true);
     expect(n.snapshot, AsyncSnapshot.withData(ConnectionState.active, data));
 
