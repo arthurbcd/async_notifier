@@ -274,6 +274,7 @@ void main() {
 
     String when() {
       return state.when(
+        skipLoading: true,
         data: (data) => '${state.isReloading ? 'reloading' : 'data'}: $data',
         error: (e, s) => 'error $e',
         loading: () => 'loading',

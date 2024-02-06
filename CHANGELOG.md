@@ -2,9 +2,11 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.0 - Oct 29, 2023
+## 0.2.3 - Oct 31, 2023
 
 - BREAKING CHANGE: Removed `reloading` parameter from `when` extension. Use `isReloading` inside `data` parameter instead.
+- Adds `skipLoading` in `when` extension.
+- Adds `whenOrNull` extension to `AsyncSnapshot` extension and `AsyncNotifier`.
 - Adds `hasNone` extension to `AsyncSnapshot` and `AsyncNotifier`.
 - Adds `setValue` in `AsyncNotifier` with `notify = true` optional parameter.
 - Adds `setValue` as an extension to `ValueNotifier`.

@@ -33,22 +33,42 @@ extension AsyncListenableBaseExtension<T, Data extends T>
 
   /// Handles different states of this [snapshot].
   ///
-  /// For more details, see the documentation for [AsyncSnapshotExtension.when].
+  /// For more details, see [AsyncSnapshotExtension.when] documentation.
   R when<R>({
     required R Function(Data data) data,
     required R Function(Object error, StackTrace stackTrace) error,
     required R Function() loading,
     R Function()? none,
+    bool skipLoading = false,
   }) {
     return snapshot.when(
       data: data,
       error: error,
       loading: loading,
+      skipLoading: skipLoading,
+      none: none,
+    );
+  }
+
+  /// Handles different states of this [snapshot] or return null.
+  ///
+  /// For more details, see [AsyncSnapshotExtension.whenOrNull] documentation.
+  R? whenOrNull<R>({
+    R Function(Data data)? data,
+    R Function(Object error, StackTrace stackTrace)? error,
+    R Function()? loading,
+    R Function()? none,
+    bool skipLoading = false,
+  }) {
+    return snapshot.whenOrNull(
+      data: data,
+      error: error,
+      loading: loading,
+      skipLoading: skipLoading,
       none: none,
     );
   }
 }
-
 /// Extension for [AsyncListenableBase] with nullable [T] or [Data].
 extension AsyncListenableNullableExtension<T, Data extends T>
     on AsyncListenableBase<T?, Data?> {
