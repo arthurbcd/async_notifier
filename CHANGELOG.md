@@ -2,6 +2,15 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 - Feb 06, 2024
+
+- Adds `requireValue` extension to `AsyncNotifier`. Deprecates `requireData`.
+- Adds `maybeWhen` extension to `AsyncNotifier`.
+- Changes nullable `StackTrace?` in `AsyncSnapshot` to be non-nullable.
+- Changes `AsyncNotifier.when` for `Future<T?>`. Now completes with `null` instead of requiring it.
+- Changes `isReloading`. Now considers `hasError` in all cases, instead of just `hasData`.
+- Updated tests.
+
 ## 0.2.3 - Oct 31, 2023
 
 - BREAKING CHANGE: Removed `reloading` parameter from `when` extension. Use `isReloading` inside `data` parameter instead.

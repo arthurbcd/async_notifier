@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 
 /// Extension on [AsyncSnapshot] to handle its various states
-extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
+extension AsyncSnapshotExtension<Data> on AsyncSnapshot<Data> {
   /// Allows you to define custom behavior for different states of an [AsyncSnapshot]
   /// by providing callbacks for `data`, `error`, `loading`, and `none`.
   ///
-  /// - [data] Callbacks when snapshot has [T] data.
+  /// - [data] Callbacks when snapshot has [Data] data.
   /// - [error] Callbacks when snapshot [hasError].
   /// - [loading] Callbacks when snapshot [isLoading] and [hasNone].
   /// - [none] Optionally callbacks when snapshot not [isLoading] and [hasNone].
@@ -56,7 +56,7 @@ extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
   /// )
   /// ```
   R when<R>({
-    required R Function(T data) data,
+    required R Function(Data data) data,
     required R Function(Object error, StackTrace stackTrace) error,
     required R Function() loading,
     R Function()? none,
@@ -64,7 +64,7 @@ extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
   }) {
     if (isLoading && !skipLoading) return loading();
     if (hasError) return error(this.error!, stackTrace ?? StackTrace.empty);
-    if (this.data is T) return data(this.data as T);
+    if (hasData) return data(this.data as Data);
 
     switch (connectionState) {
       case ConnectionState.none:
@@ -77,16 +77,17 @@ extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
         return loading();
 
       case ConnectionState.done:
-        return none?.call() ?? data(requireData); //throws StateError
+        if (none != null) return none();
+        return data(this.data is Data ? this.data as Data : requireData);
     }
   }
 
   /// Allows you to define custom behavior for different states of an [AsyncSnapshot]
   /// by providing callbacks for `data`, `error`, `loading`, and `none`.
   ///
-  /// Same as [when] but optionally returns null when callback is not handled.
+  /// Same as [when] but returns null for unhandled states.
   R? whenOrNull<R>({
-    R Function(T data)? data,
+    R Function(Data data)? data,
     R Function(Object error, StackTrace stackTrace)? error,
     R Function()? loading,
     R Function()? none,
@@ -97,7 +98,28 @@ extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
       data: data ?? (_) => null,
       error: error ?? (_, __) => null,
       loading: loading ?? () => null,
-      none: none,
+      none: none ?? () => null,
+    );
+  }
+
+  /// Allows you to define custom behavior for different states of an [AsyncSnapshot]
+  /// by providing callbacks for `data`, `error`, `loading`, and `none`.
+  ///
+  /// Same as [when] but requires a default [orElse] for unhandled states.
+  R maybeWhen<R>({
+    R Function(Data data)? data,
+    R Function(Object error, StackTrace stackTrace)? error,
+    R Function()? loading,
+    R Function()? none,
+    required R Function() orElse,
+    bool skipLoading = false,
+  }) {
+    return when(
+      skipLoading: skipLoading,
+      data: data ?? (_) => orElse(),
+      error: error ?? (_, __) => orElse(),
+      loading: loading ?? orElse,
+      none: none ?? orElse,
     );
   }
 

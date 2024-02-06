@@ -322,6 +322,102 @@ void main() {
     expect(when(), 'error ❌');
   });
 
+  test('AsyncNotifier.when nullable', () async {
+    final state = AsyncNotifier<String?>(null);
+
+    String when() {
+      return state.when(
+        skipLoading: true,
+        data: (data) => '${state.isReloading ? 'reloading' : 'data'}: $data',
+        error: (e, s) => 'error $e',
+        loading: () => 'loading',
+        none: () => 'none',
+      );
+    }
+
+    expect(when(), 'none');
+
+    state.future = Future.value('✅');
+    expect(when(), 'loading');
+
+    await state.future;
+    expect(when(), 'data: ✅');
+
+    state.stream = Stream.value('🔁');
+    expect(when(), 'reloading: ✅');
+
+    await state.stream!.single;
+    expect(when(), 'data: 🔁');
+
+    state.future = Future.error('❌');
+    expect(when(), 'reloading: 🔁');
+
+    await state.future!.catchError((_) => '');
+    expect(when(), 'error ❌');
+
+    state.future = null;
+    expect(when(), 'data: 🔁');
+
+    state.value = null;
+    expect(when(), 'none');
+    expect(state.hasNone, true);
+
+    state.stream = const Stream.empty();
+    expect(when(), 'loading');
+
+    await state.stream?.toList();
+    expect(when(), 'none');
+
+    state.stream = Stream.error('❌');
+    expect(when(), 'loading');
+
+    await state.stream!.single.catchError((_) => '');
+    expect(when(), 'error ❌');
+  });
+
+  test('AsyncNotifier.when <void>', () async {
+    final state = AsyncNotifier.late<void>();
+
+    String when() {
+      return state.when(
+        skipLoading: true,
+        data: (_) => '${state.isReloading ? 'reloading' : 'data'}: ✅',
+        error: (e, s) => '${state.isReloading ? 'reloading' : 'error'}: $e',
+        loading: () => 'loading',
+        none: () => 'none',
+      );
+    }
+
+    expect(when(), 'none');
+
+    state.future = Future.value();
+    expect(when(), 'loading');
+
+    await state.future;
+    expect(when(), 'none');
+
+    state.future = Future.error('❌');
+    expect(when(), 'loading');
+
+    await state.future!.catchError((_) => '');
+    expect(when(), 'error: ❌');
+
+    // settings a new Future resets, so it's loading again.
+    // ? maybe it should be reloading
+    state.future = Future.error('❌❌');
+    expect(when(), 'reloading: ❌');
+
+    await state.future!.catchError((_) => '');
+    expect(when(), 'error: ❌❌');
+
+    state.future = null;
+    expect(when(), 'none');
+
+    state.value = null;
+    expect(when(), 'none');
+    expect(state.hasNone, true);
+  });
+
   group('extension', () {
     final state = ValueNotifier(0);
     test('ValueNotifier.setValue', () {

@@ -42,10 +42,10 @@ extension AsyncListenableBaseExtension<T, Data extends T>
     bool skipLoading = false,
   }) {
     return snapshot.when(
+      skipLoading: skipLoading,
       data: data,
       error: error,
       loading: loading,
-      skipLoading: skipLoading,
       none: none,
     );
   }
@@ -61,17 +61,43 @@ extension AsyncListenableBaseExtension<T, Data extends T>
     bool skipLoading = false,
   }) {
     return snapshot.whenOrNull(
+      skipLoading: skipLoading,
       data: data,
       error: error,
       loading: loading,
-      skipLoading: skipLoading,
       none: none,
     );
   }
+
+  /// Handles different states of this [snapshot] or return [orElse].
+  ///
+  /// For more details, see [AsyncSnapshotExtension.maybeWhen] documentation.
+  R maybeWhen<R>({
+    R Function(Data data)? data,
+    R Function(Object error, StackTrace stackTrace)? error,
+    R Function()? loading,
+    R Function()? none,
+    required R Function() orElse,
+    bool skipLoading = false,
+  }) {
+    return snapshot.maybeWhen(
+      skipLoading: skipLoading,
+      data: data,
+      error: error,
+      loading: loading,
+      none: none,
+      orElse: orElse,
+    );
+  }
 }
+
 /// Extension for [AsyncListenableBase] with nullable [T] or [Data].
 extension AsyncListenableNullableExtension<T, Data extends T>
     on AsyncListenableBase<T?, Data?> {
-  /// Returns latest data received, failing if there is no data.
-  T get requireData => value ?? snapshot.requireData!;
+  /// Returns latest value received, failing if there is no data.
+  T get requireValue => value ?? snapshot.requireData!;
+
+  /// Returns latest value received, failing if there is no data.
+  @Deprecated('Use `requireValue` instead')
+  T get requireData => requireValue;
 }

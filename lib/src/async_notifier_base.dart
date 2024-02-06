@@ -2,13 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
+import '../async_notifier.dart';
 import 'async_listenable_base.dart';
 
 /// Signature for callbacks that report data.
 typedef DataChanged<T> = void Function(T data);
 
 /// Signature for callbacks that report errors.
-typedef ErrorCallback = void Function(Object error, StackTrace? stackTrace);
+typedef ErrorCallback = void Function(Object error, StackTrace stackTrace);
 
 /// Base class for `AsyncNotifier` and `AsyncNotifierLate`.
 abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
@@ -92,9 +93,9 @@ abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
     _unsubscribe();
 
     _future = future;
-    snapshot = value is Data
-        ? AsyncSnapshot.withData(ConnectionState.waiting, value as Data)
-        : const AsyncSnapshot.waiting();
+    snapshot = hasNone
+        ? const AsyncSnapshot.waiting()
+        : snapshot.inState(ConnectionState.waiting);
 
     _future?.then(
       (data) {
@@ -130,9 +131,9 @@ abstract class AsyncNotifierBase<T, Data extends T> extends ValueNotifier<T>
     _unsubscribe();
 
     _stream = stream.asBroadcastStream();
-    snapshot = value is Data
-        ? AsyncSnapshot.withData(ConnectionState.waiting, value as Data)
-        : const AsyncSnapshot.waiting();
+    snapshot = hasNone
+        ? const AsyncSnapshot.waiting()
+        : snapshot.inState(ConnectionState.waiting);
 
     _subscription = _stream?.listen(
       (data) {

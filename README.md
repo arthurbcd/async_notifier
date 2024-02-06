@@ -32,7 +32,7 @@ void main() {
   counter.isReloading
   counter.future
   counter.stream
-  counter.requireData
+  counter.requireValue
   counter.hasData
   counter.hasError
   counter.error
