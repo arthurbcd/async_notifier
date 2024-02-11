@@ -2,7 +2,7 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.3.0 - Feb 06, 2024
+## 0.3.1 - Feb 06, 2024
 
 - Adds `requireValue` extension to `AsyncNotifier`. Deprecates `requireData`.
 - Adds `maybeWhen` extension to `AsyncNotifier`.
