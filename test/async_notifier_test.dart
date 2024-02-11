@@ -366,7 +366,7 @@ void main() {
     expect(when(), 'loading');
 
     await state.stream?.toList();
-    expect(when(), 'none');
+    expect(when(), 'data: null');
 
     state.stream = Stream.error('❌');
     expect(when(), 'loading');
@@ -394,7 +394,7 @@ void main() {
     expect(when(), 'loading');
 
     await state.future;
-    expect(when(), 'none');
+    expect(when(), 'data: ✅');
 
     state.future = Future.error('❌');
     expect(when(), 'loading');

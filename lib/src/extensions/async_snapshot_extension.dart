@@ -68,7 +68,7 @@ extension AsyncSnapshotExtension<Data> on AsyncSnapshot<Data> {
 
     switch (connectionState) {
       case ConnectionState.none:
-        return none?.call() ?? loading();
+        return none != null ? none() : loading();
 
       case ConnectionState.waiting:
         return loading();
@@ -77,8 +77,8 @@ extension AsyncSnapshotExtension<Data> on AsyncSnapshot<Data> {
         return loading();
 
       case ConnectionState.done:
-        if (none != null) return none();
-        return data(this.data is Data ? this.data as Data : requireData);
+        if (this.data is Data) return data(this.data as Data);
+        return none != null ? none() : data(requireData);
     }
   }
 
