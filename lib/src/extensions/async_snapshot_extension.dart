@@ -1,11 +1,11 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 /// Extension on [AsyncSnapshot] to handle its various states
-extension AsyncSnapshotExtension<Data> on AsyncSnapshot<Data> {
+extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
   /// Allows you to define custom behavior for different states of an [AsyncSnapshot]
   /// by providing callbacks for `data`, `error`, `loading`, and `none`.
   ///
-  /// - [data] Callbacks when snapshot has [Data] data.
+  /// - [data] Callbacks when snapshot has [T] data.
   /// - [error] Callbacks when snapshot [hasError].
   /// - [loading] Callbacks when snapshot [isLoading] and [hasNone].
   /// - [none] Optionally callbacks when snapshot not [isLoading] and [hasNone].
@@ -56,30 +56,23 @@ extension AsyncSnapshotExtension<Data> on AsyncSnapshot<Data> {
   /// )
   /// ```
   R when<R>({
-    required R Function(Data data) data,
+    bool skipLoading = false,
+    required R Function(T data) data,
     required R Function(Object error, StackTrace stackTrace) error,
     required R Function() loading,
     R Function()? none,
-    bool skipLoading = false,
   }) {
     if (isLoading && !skipLoading) return loading();
-    if (hasError) return error(this.error!, stackTrace ?? StackTrace.empty);
-    if (hasData) return data(this.data as Data);
+    if (hasData) return data(this.data as T);
+    if (hasError) return error(this.error!, stackTrace!);
 
-    switch (connectionState) {
-      case ConnectionState.none:
-        return none != null ? none() : loading();
-
-      case ConnectionState.waiting:
-        return loading();
-
-      case ConnectionState.active:
-        return loading();
-
-      case ConnectionState.done:
-        if (this.data is Data) return data(this.data as Data);
-        return none != null ? none() : data(requireData);
-    }
+    return switch (connectionState) {
+      ConnectionState.none => none != null ? none() : loading(),
+      ConnectionState.waiting => loading(),
+      ConnectionState.active => loading(),
+      ConnectionState.done when this.data is T => data(this.data as T),
+      _ => none != null ? none() : data(requireData),
+    };
   }
 
   /// Allows you to define custom behavior for different states of an [AsyncSnapshot]
@@ -87,11 +80,11 @@ extension AsyncSnapshotExtension<Data> on AsyncSnapshot<Data> {
   ///
   /// Same as [when] but returns null for unhandled states.
   R? whenOrNull<R>({
-    R Function(Data data)? data,
+    bool skipLoading = false,
+    R Function(T data)? data,
     R Function(Object error, StackTrace stackTrace)? error,
     R Function()? loading,
     R Function()? none,
-    bool skipLoading = false,
   }) {
     return when(
       skipLoading: skipLoading,
@@ -107,12 +100,12 @@ extension AsyncSnapshotExtension<Data> on AsyncSnapshot<Data> {
   ///
   /// Same as [when] but requires a default [orElse] for unhandled states.
   R maybeWhen<R>({
-    R Function(Data data)? data,
+    bool skipLoading = false,
+    R Function(T data)? data,
     R Function(Object error, StackTrace stackTrace)? error,
     R Function()? loading,
     R Function()? none,
     required R Function() orElse,
-    bool skipLoading = false,
   }) {
     return when(
       skipLoading: skipLoading,
@@ -123,7 +116,7 @@ extension AsyncSnapshotExtension<Data> on AsyncSnapshot<Data> {
     );
   }
 
-  /// Returns whether this snapshot has neither data nor error.
+  /// Returns whether this snapshot has neither [data]/[error].
   bool get hasNone => !hasData && !hasError;
 
   /// Returns whether this snapshot is computing.
@@ -131,6 +124,19 @@ extension AsyncSnapshotExtension<Data> on AsyncSnapshot<Data> {
       connectionState == ConnectionState.waiting ||
       connectionState == ConnectionState.active;
 
-  /// Returns whether this snapshot is computing and [hasData].
+  /// Returns whether this snapshot is computing and has [data]/[error].
   bool get isReloading => (hasData || hasError) && isLoading;
+
+  /// Maps the data of this snapshot to another type.
+  AsyncSnapshot<R> mapData<R>(
+    R Function(T data) transform,
+  ) {
+    if (hasError) {
+      return AsyncSnapshot.withError(connectionState, error!, stackTrace!);
+    }
+    if (hasData) {
+      return AsyncSnapshot.withData(connectionState, transform(data as T));
+    }
+    return AsyncSnapshot<R>.nothing().inState(connectionState);
+  }
 }

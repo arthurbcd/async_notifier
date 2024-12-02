@@ -6,9 +6,7 @@
 /// Listen, notify, and manage loading, error and data in one place.
 library async_notifier;
 
-export 'src/async_listenable_interface.dart';
-export 'src/async_notifier_impl.dart';
-export 'src/extensions/async_listenable_extension.dart';
+export 'src/async_notifier.dart';
 export 'src/extensions/async_snapshot_extension.dart';
 export 'src/extensions/listenable_extension.dart';
 export 'src/extensions/value_listenable_extension.dart';

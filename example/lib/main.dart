@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:async_notifier/async_notifier.dart';
 import 'package:flutter/material.dart';
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   runApp(MainApp(notifier: TodosNotifier()));
@@ -38,7 +41,7 @@ class BookRepository {
     yield _books.toList();
   }
 
-  Future<List<Book>> fetchBooks() async {
+  Future<List<Book>> getBooks() async {
     await Future<void>.delayed(const Duration(seconds: 1));
     return _books.toList();
   }
@@ -46,55 +49,53 @@ class BookRepository {
 
 class TodosNotifier extends ChangeNotifier {
   TodosNotifier() {
-    fetchBooks();
+    _books.addListener(notifyListeners);
   }
 
   final _repository = BookRepository();
-  final messengerkey = GlobalKey<ScaffoldMessengerState>();
 
-  // Use `sync` to bind your ValueNotifier to this ChangeNotifier
+  // Use `>>` to bind your ValueNotifier to this ChangeNotifier
   // Use ValueNotifier for synchronous data
-  late final _ascending = ValueNotifier(true).sync(this);
+  var _ascending = false;
+  StreamSubscription<List<Book>>? _booksSubscription;
 
   // Use AsyncNotifier for asynchronous data
-  late final _books = AsyncNotifier(<Book>[], onData: _onData).sync(this);
+  final _books = AsyncNotifier<List<Book>>();
 
-  void _onData(List<Book> books) async {
-    await _repository.saveBooks(books);
-    messengerkey.currentState?.showSnackBar(
-      const SnackBar(content: Text('Saved books with success!')),
-    );
-  }
+  AsyncSnapshot<List<Book>> get snapshot => _books.snapshot
+      .mapData((list) => isAscending ? list : list.reversed.toList());
 
-  List<Book> get books {
-    final list = isAscending ? _books.value : _books.value.reversed;
-    return list.toList();
-  }
-
-  String? get errorMessage => _books.error?.toString();
-
-  bool get isLoading => _books.isLoading;
-
-  bool get isAscending => _ascending.value;
+  bool get isAscending => _ascending;
 
   void toggleSort() {
-    _ascending.value = !_ascending.value;
+    _ascending = !_ascending;
+    notifyListeners();
   }
 
   void fetchBooks() {
-    _books.stream = _repository.streamBooks();
+    _books.future = _repository.getBooks();
   }
 
   void streamBooks() {
-    _books.future = _repository.fetchBooks();
+    _booksSubscription = _repository.streamBooks().listen(setBooks);
+  }
+
+  void setBooks(List<Book> books) {
+    _books.value = AsyncSnapshot.withData(ConnectionState.done, books);
   }
 
   void addBook(Book book) {
-    _books.value = books..add(book);
+    // repository.saveBooks([...books, book]);
+    fetchBooks();
   }
 
-  void removeBook(Book book) {
-    _books.value = books..remove(book);
+  void removeBook(Book book) {}
+
+  @override
+  void dispose() {
+    _books.dispose();
+    _booksSubscription?.cancel();
+    super.dispose();
   }
 }
 
@@ -106,7 +107,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      scaffoldMessengerKey: notifier.messengerkey,
+      // scaffoldMessengerKey: notifier.messengerkey,
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
@@ -128,13 +129,14 @@ class MainApp extends StatelessWidget {
             child: ListenableBuilder(
               listenable: notifier,
               builder: (context, _) {
-                if (notifier.isLoading) {
+                final list = notifier.snapshot.data ?? [];
+                if (notifier.snapshot.isLoading) {
                   return const CircularProgressIndicator();
                 }
                 return ListView.builder(
-                  itemCount: notifier.books.length,
+                  itemCount: list.length,
                   itemBuilder: (context, index) {
-                    final todo = notifier.books[index];
+                    final todo = list[index];
 
                     return ListTile(
                       title: Text(todo.title),

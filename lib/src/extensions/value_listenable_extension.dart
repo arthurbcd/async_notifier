@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../async_notifier_base.dart';
-import '../async_notifier_impl.dart';
+import '../async_notifier.dart';
 
 /// Extension adapter for [ValueListenable].
 extension AsyncValueListenableExtension<T> on ValueListenable<T> {
@@ -10,15 +9,7 @@ extension AsyncValueListenableExtension<T> on ValueListenable<T> {
     DataChanged<T>? onData,
     ErrorCallback? onError,
   }) {
-    return AsyncNotifier(value, onData: onData, onError: onError);
-  }
-
-  /// Creates [AsyncNotifierLate] with value `T?` and async data `T`.
-  AsyncNotifierLate<T> asAsyncLate({
-    DataChanged<T>? onData,
-    ErrorCallback? onError,
-  }) {
-    return AsyncNotifierLate(value: value, onData: onData, onError: onError);
+    return AsyncNotifier(data: value, onData: onData, onError: onError);
   }
 
   /// Listens to [ValueListenable] and returns a [VoidCallback] remover.

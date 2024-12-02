@@ -9,45 +9,35 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('AsyncNotifier.value', () {
     int? data = 0;
-    final n = AsyncNotifier.late<int>(value: data, onData: (d) => data = d);
+    final n = AsyncNotifier<int>(data: data, onData: (d) => data = d);
     expect(data, 0);
-    expect(n.value, 0);
+    expect(n.snapshot.data, 0);
     expect(n.snapshot, const AsyncSnapshot.withData(ConnectionState.none, 0));
-
-    n.value = 1;
-    expect(data, 1);
-    expect(n.value, 1);
-    expect(n.snapshot, const AsyncSnapshot.withData(ConnectionState.none, 1));
-
-    n.value = null;
-    expect(data, null);
-    expect(n.value, null);
-    expect(n.snapshot, const AsyncSnapshot<int>.nothing());
   });
 
   group('AsyncNotifier.future', () {
     int? data;
-    final n = AsyncNotifier.late<int>(onData: (d) => data = d);
+    final n = AsyncNotifier<int>(onData: (d) => data = d);
     // final b = ValueNotifier(data).asAsync<int>();
     test('ConnectionState.none', () async {
       expect(data, null);
-      expect(n.value, null);
-      expect(n.isLoading, false);
+      expect(n.snapshot.data, null);
+      expect(n.snapshot.isLoading, false);
       expect(n.snapshot, const AsyncSnapshot<int>.nothing());
     });
 
     test('ConnectionState.waiting', () async {
       n.future = Future.delayed(const Duration(milliseconds: 100), () => 1);
       expect(data, null);
-      expect(n.value, null);
-      expect(n.isLoading, true);
+      expect(n.snapshot.data, null);
+      expect(n.snapshot.isLoading, true);
       expect(n.snapshot, const AsyncSnapshot<int>.waiting());
     });
 
     test('ConnectionState.done', () async {
       await Future<void>.delayed(const Duration(milliseconds: 200));
       expect(data, 1);
-      expect(n.value, 1);
+      expect(n.snapshot.data, 1);
       expect(n.snapshot, AsyncSnapshot.withData(ConnectionState.done, data));
     });
   });
@@ -58,7 +48,7 @@ void main() {
     Object? error;
     StackTrace? stackTrace;
 
-    final n = AsyncNotifier.late<bool>(
+    final n = AsyncNotifier<bool>(
       onData: (d) => data = d,
       onError: (e, s) {
         error = e;
@@ -68,21 +58,21 @@ void main() {
 
     n.future = Future.delayed(const Duration(seconds: 1), () => throw e);
     expect(data, null);
-    expect(n.value, null);
-    expect(n.isLoading, true);
-    expect(n.hasError, false);
-    expect(n.error, null);
-    expect(n.connectionState, ConnectionState.waiting);
+    expect(n.snapshot.data, null);
+    expect(n.snapshot.isLoading, true);
+    expect(n.snapshot.hasError, false);
+    expect(n.snapshot.error, null);
+    expect(n.snapshot.connectionState, ConnectionState.waiting);
     expect(n.snapshot, const AsyncSnapshot<bool>.waiting());
 
     await Future<void>.delayed(const Duration(seconds: 1));
     expect(data, null);
-    expect(n.value, null);
-    expect(n.isLoading, false);
-    expect(n.hasError, true);
-    expect(n.error, error);
-    expect(n.error, isA<Error>());
-    expect(n.connectionState, ConnectionState.done);
+    expect(n.snapshot.data, null);
+    expect(n.snapshot.isLoading, false);
+    expect(n.snapshot.hasError, true);
+    expect(n.snapshot.error, error);
+    expect(n.snapshot.error, isA<Error>());
+    expect(n.snapshot.connectionState, ConnectionState.done);
 
     final snapshotWithError = AsyncSnapshot<bool>.withError(
       ConnectionState.done,
@@ -94,44 +84,44 @@ void main() {
 
   test('AsyncNotifier.future with new future', () async {
     int? data;
-    final n = AsyncNotifier.late<int>(onData: (d) => data = d);
+    final n = AsyncNotifier<int>(onData: (d) => data = d);
 
     // First future.
     n.future = Future.delayed(const Duration(milliseconds: 100), () => 1);
     expect(data, null);
-    expect(n.value, null);
-    expect(n.isLoading, true);
+    expect(n.snapshot.data, null);
+    expect(n.snapshot.isLoading, true);
     expect(n.snapshot, const AsyncSnapshot<int>.waiting());
 
     // Second future.
     n.future = Future.delayed(const Duration(milliseconds: 200), () => 2);
     expect(data, null);
-    expect(n.value, null);
-    expect(n.isLoading, true);
+    expect(n.snapshot.data, null);
+    expect(n.snapshot.isLoading, true);
     expect(n.snapshot, const AsyncSnapshot<int>.waiting());
 
     // First future has no time to complete. It's overriden by second future.
     await Future<void>.delayed(const Duration(milliseconds: 150));
     expect(data, isNot(1));
-    expect(n.value, isNot(1));
-    expect(n.isLoading, true);
+    expect(n.snapshot.data, isNot(1));
+    expect(n.snapshot.isLoading, true);
     expect(n.snapshot, const AsyncSnapshot<int>.waiting());
 
     // Second future completes normally.
     await Future<void>.delayed(const Duration(milliseconds: 200));
     expect(data, 2);
-    expect(n.value, 2);
-    expect(n.isLoading, false);
+    expect(n.snapshot.data, 2);
+    expect(n.snapshot.isLoading, false);
     expect(n.snapshot, AsyncSnapshot.withData(ConnectionState.done, data));
   });
 
   group('AsyncNotifier.stream', () {
     int? data;
-    final n = AsyncNotifier.late<int>(onData: (d) => data = d);
+    final n = AsyncNotifier<int>(onData: (d) => data = d);
     test('ConnectionState.none', () async {
       expect(data, null);
-      expect(n.value, null);
-      expect(n.isLoading, false);
+      expect(n.snapshot.data, null);
+      expect(n.snapshot.isLoading, false);
       expect(n.snapshot, const AsyncSnapshot<int>.nothing());
     });
 
@@ -139,22 +129,22 @@ void main() {
       /// will stream 0, 1, 2
       n.stream = Stream.periodic(const Duration(seconds: 1), (i) => i).take(3);
       expect(data, null);
-      expect(n.value, null);
-      expect(n.isLoading, true);
+      expect(n.snapshot.data, null);
+      expect(n.snapshot.isLoading, true);
       expect(n.snapshot, const AsyncSnapshot<int>.waiting());
     });
 
     test('ConnectionState.active', () async {
       await Future<void>.delayed(const Duration(seconds: 2));
       expect(data, 1);
-      expect(n.value, 1);
+      expect(n.snapshot.data, 1);
       expect(n.snapshot, AsyncSnapshot.withData(ConnectionState.active, data));
     });
 
     test('ConnectionState.done', () async {
       await Future<void>.delayed(const Duration(seconds: 3));
       expect(data, 2);
-      expect(n.value, 2);
+      expect(n.snapshot.data, 2);
       expect(n.snapshot, AsyncSnapshot.withData(ConnectionState.done, data));
     });
   });
@@ -166,7 +156,7 @@ void main() {
     StackTrace? stackTrace;
     final controller = StreamController<int>();
 
-    final n = AsyncNotifier.late<int>(
+    final n = AsyncNotifier<int>(
       onData: (d) => data = d,
       onError: (e, s) {
         error = e;
@@ -177,33 +167,35 @@ void main() {
     n.stream = controller.stream;
 
     expect(data, null);
-    expect(n.value, null);
-    expect(n.isLoading, true);
-    expect(n.hasError, false);
-    expect(n.error, null);
-    expect(n.connectionState, ConnectionState.waiting);
+    expect(n.snapshot.data, null);
+    expect(n.snapshot.isLoading, true);
+    expect(n.snapshot.hasError, false);
+    expect(n.snapshot.error, null);
+    expect(n.snapshot.connectionState, ConnectionState.waiting);
     expect(n.snapshot, const AsyncSnapshot<int>.waiting());
 
     controller.add(1);
     await Future<void>.delayed(const Duration(seconds: 1));
 
     expect(data, 1);
-    expect(n.value, 1);
-    expect(n.isReloading, true);
-    expect(n.hasError, false);
-    expect(n.error, null);
-    expect(n.connectionState, ConnectionState.active);
+    expect(n.snapshot.data, 1);
+    expect(n.snapshot.isReloading, true);
+    expect(n.snapshot.hasError, false);
+    expect(n.snapshot.error, null);
+    expect(n.snapshot.connectionState, ConnectionState.active);
     expect(n.snapshot, AsyncSnapshot.withData(ConnectionState.active, data));
 
     controller.addError(e);
     await Future<void>.delayed(const Duration(seconds: 1));
 
     expect(data, 1);
-    expect(n.value, 1);
-    expect(n.isLoading, true);
-    expect(n.hasError, true);
-    expect(n.error, error);
-    expect(n.connectionState, ConnectionState.active);
+
+    // as we cannot have both data and error, error replaces data.
+    expect(n.snapshot.data, null);
+    expect(n.snapshot.isLoading, true);
+    expect(n.snapshot.hasError, true);
+    expect(n.snapshot.error, error);
+    expect(n.snapshot.connectionState, ConnectionState.active);
 
     final snapshotWithError = AsyncSnapshot<int>.withError(
       ConnectionState.active,
@@ -218,11 +210,11 @@ void main() {
     await Future<void>.delayed(const Duration(seconds: 1));
 
     expect(data, 2);
-    expect(n.value, 2);
-    expect(n.isLoading, false);
-    expect(n.hasError, false);
-    expect(n.error, null);
-    expect(n.connectionState, ConnectionState.done);
+    expect(n.snapshot.data, 2);
+    expect(n.snapshot.isLoading, false);
+    expect(n.snapshot.hasError, false);
+    expect(n.snapshot.error, null);
+    expect(n.snapshot.connectionState, ConnectionState.done);
     expect(n.snapshot, AsyncSnapshot.withData(ConnectionState.done, data));
   });
 
@@ -231,7 +223,7 @@ void main() {
     final error = Error();
     final completer = Completer<void>();
 
-    final n = AsyncNotifier.late<int>(
+    final n = AsyncNotifier<int>(
       onData: (d) => data = d,
       onError: (error, stackTrace) {
         completer.complete();
@@ -241,25 +233,25 @@ void main() {
     // First stream.
     n.stream = Stream.periodic(const Duration(seconds: 1), (_) => throw error);
     expect(data, null);
-    expect(n.value, null);
-    expect(n.isLoading, true);
+    expect(n.snapshot.data, null);
+    expect(n.snapshot.isLoading, true);
     expect(n.snapshot, const AsyncSnapshot<int>.waiting());
 
     // Second stream.
     n.stream = Stream.periodic(const Duration(seconds: 1), (i) => 1).take(1);
     expect(data, null);
-    expect(n.value, null);
-    expect(n.isLoading, true);
+    expect(n.snapshot.data, null);
+    expect(n.snapshot.isLoading, true);
     expect(n.snapshot, const AsyncSnapshot<int>.waiting());
 
     // First stream has no time to throw. It's overriden by second stream.
     await Future<void>.delayed(const Duration(seconds: 1));
     expect(data, 1);
-    expect(n.value, 1);
-    expect(n.error, isNot(error));
-    expect(n.hasError, false);
-    expect(n.isLoading, true);
-    expect(n.isReloading, true);
+    expect(n.snapshot.data, 1);
+    expect(n.snapshot.error, isNot(error));
+    expect(n.snapshot.hasError, false);
+    expect(n.snapshot.isLoading, true);
+    expect(n.snapshot.isReloading, true);
     expect(n.snapshot, AsyncSnapshot.withData(ConnectionState.active, data));
 
     await Future<void>.delayed(const Duration(seconds: 1));
@@ -270,12 +262,13 @@ void main() {
   });
 
   test('AsyncNotifier.when', () async {
-    final state = AsyncNotifier.late<String>();
+    final n = AsyncNotifier<String>();
 
     String when() {
-      return state.when(
+      return n.snapshot.when(
         skipLoading: true,
-        data: (data) => '${state.isReloading ? 'reloading' : 'data'}: $data',
+        data: (data) =>
+            '${n.snapshot.isReloading ? 'reloading' : 'data'}: $data',
         error: (e, s) => 'error $e',
         loading: () => 'loading',
         none: () => 'none',
@@ -284,51 +277,49 @@ void main() {
 
     expect(when(), 'none');
 
-    state.future = Future.value('✅');
+    n.future = Future.value('✅');
     expect(when(), 'loading');
 
-    await state.future;
+    await n.future;
     expect(when(), 'data: ✅');
 
-    state.stream = Stream.value('🔁');
+    n.stream = Stream.value('🔁').asBroadcastStream();
     expect(when(), 'reloading: ✅');
 
-    await state.stream!.single;
+    await n.stream!.single;
     expect(when(), 'data: 🔁');
 
-    state.future = Future.error('❌');
+    n.future = Future.error('❌');
     expect(when(), 'reloading: 🔁');
 
-    await state.future!.catchError((_) => '');
+    await n.future!.catchError((_) => '');
     expect(when(), 'error ❌');
 
-    state.future = null;
-    expect(when(), 'data: 🔁');
+    n.future = null;
+    expect(when(), 'error ❌');
 
-    state.value = null;
-    expect(when(), 'none');
-    expect(state.hasNone, true);
+    // setting a new stream, never resets data/error.
+    n.stream = const Stream.empty();
+    expect(when(), 'error ❌');
 
-    state.stream = const Stream.empty();
-    expect(when(), 'loading');
+    await n.stream?.toList();
+    expect(when(), 'error ❌');
 
-    await state.stream?.toList();
-    expect(when(), 'none');
+    n.stream = Stream<String>.error('❌').asBroadcastStream();
+    expect(when(), 'error ❌');
 
-    state.stream = Stream.error('❌');
-    expect(when(), 'loading');
-
-    await state.stream!.single.catchError((_) => '');
+    await n.stream!.single.catchError((_) => '');
     expect(when(), 'error ❌');
   });
 
   test('AsyncNotifier.when nullable', () async {
-    final state = AsyncNotifier<String?>(null);
+    final state = AsyncNotifier<String?>();
 
     String when() {
-      return state.when(
+      return state.snapshot.when(
         skipLoading: true,
-        data: (data) => '${state.isReloading ? 'reloading' : 'data'}: $data',
+        data: (data) =>
+            '${state.snapshot.isReloading ? 'reloading' : 'data'}: $data',
         error: (e, s) => 'error $e',
         loading: () => 'loading',
         none: () => 'none',
@@ -343,7 +334,7 @@ void main() {
     await state.future;
     expect(when(), 'data: ✅');
 
-    state.stream = Stream.value('🔁');
+    state.stream = Stream<String>.value('🔁').asBroadcastStream();
     expect(when(), 'reloading: ✅');
 
     await state.stream!.single;
@@ -356,11 +347,7 @@ void main() {
     expect(when(), 'error ❌');
 
     state.future = null;
-    expect(when(), 'data: 🔁');
-
-    state.value = null;
-    expect(when(), 'none');
-    expect(state.hasNone, true);
+    expect(when(), 'error ❌');
 
     state.stream = const Stream.empty();
     expect(when(), 'loading');
@@ -368,7 +355,7 @@ void main() {
     await state.stream?.toList();
     expect(when(), 'data: null');
 
-    state.stream = Stream.error('❌');
+    state.stream = Stream<String>.error('❌').asBroadcastStream();
     expect(when(), 'loading');
 
     await state.stream!.single.catchError((_) => '');
@@ -376,13 +363,14 @@ void main() {
   });
 
   test('AsyncNotifier.when <void>', () async {
-    final state = AsyncNotifier.late<void>();
+    final state = AsyncNotifier<void>();
 
     String when() {
-      return state.when(
+      return state.snapshot.when(
         skipLoading: true,
-        data: (_) => '${state.isReloading ? 'reloading' : 'data'}: ✅',
-        error: (e, s) => '${state.isReloading ? 'reloading' : 'error'}: $e',
+        data: (_) => '${state.snapshot.isReloading ? 'reloading' : 'data'}: ✅',
+        error: (e, s) =>
+            '${state.snapshot.isReloading ? 'reloading' : 'error'}: $e',
         loading: () => 'loading',
         none: () => 'none',
       );
@@ -402,8 +390,6 @@ void main() {
     await state.future!.catchError((_) => '');
     expect(when(), 'error: ❌');
 
-    // settings a new Future resets, so it's loading again.
-    // ? maybe it should be reloading
     state.future = Future.error('❌❌');
     expect(when(), 'reloading: ❌');
 
@@ -411,11 +397,7 @@ void main() {
     expect(when(), 'error: ❌❌');
 
     state.future = null;
-    expect(when(), 'none');
-
-    state.value = null;
-    expect(when(), 'none');
-    expect(state.hasNone, true);
+    expect(when(), 'error: ❌❌');
   });
 
   group('extension', () {
@@ -445,7 +427,7 @@ void main() {
       final notifier = ChangeNotifier();
       notifier.addListener(() => called++);
 
-      final state = ValueNotifier(false).sync(notifier);
+      final state = ValueNotifier(false) >> notifier;
       expect(called, 0);
       expect(state.value, false);
 

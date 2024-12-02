@@ -2,6 +2,14 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 - Dec 02, 2024
+
+- Simplifies `AsyncNotifier`.
+- Removes `AsyncNotifier.late`.
+- Removes `AsyncNotifier` setters.
+- Removes `AsyncListenable` getters.
+- Removes `AsyncListenable` extensions.
+
 ## 0.3.2 - Feb 06, 2024
 
 - Adds `requireValue` extension to `AsyncNotifier`. Deprecates `requireData`.
