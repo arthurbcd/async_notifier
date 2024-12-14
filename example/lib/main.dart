@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:async_notifier/async_notifier.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   runApp(MainApp(notifier: TodosNotifier()));
@@ -63,7 +62,7 @@ class TodosNotifier extends ChangeNotifier {
   final _books = AsyncNotifier<List<Book>>();
 
   AsyncSnapshot<List<Book>> get snapshot => _books.snapshot
-      .mapData((list) => isAscending ? list : list.reversed.toList());
+      .whenData((list) => isAscending ? list : list.reversed.toList());
 
   bool get isAscending => _ascending;
 
@@ -81,7 +80,7 @@ class TodosNotifier extends ChangeNotifier {
   }
 
   void setBooks(List<Book> books) {
-    _books.value = AsyncSnapshot.withData(ConnectionState.done, books);
+    _books.future = Future.value(books);
   }
 
   void addBook(Book book) {

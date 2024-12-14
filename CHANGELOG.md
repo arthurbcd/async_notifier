@@ -2,6 +2,19 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 - Dec 14, 2024
+
+- Simplifies `AsyncNotifier`.
+- Removes `AsyncNotifier.onData`.
+- Removes `AsyncNotifier.onError`.
+- Removes `DataChanged` typedef.
+- Removes `ErrorCallback` typedef.
+- Added `AsyncSnapshotExtension.whenData`.
+- Added `AsyncSnapshotExtension.whenError`.
+- Updated `AsyncValueListenableExtension.asAsync`.
+- Updated `README.md`.
+- Updated docs.
+
 ## 0.4.0 - Dec 02, 2024
 
 - Simplifies `AsyncNotifier`.

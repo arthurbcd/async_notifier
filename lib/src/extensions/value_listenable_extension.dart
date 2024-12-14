@@ -5,11 +5,8 @@ import '../async_notifier.dart';
 /// Extension adapter for [ValueListenable].
 extension AsyncValueListenableExtension<T> on ValueListenable<T> {
   /// Creates [AsyncNotifier] with value `T` and async data `T`.
-  AsyncNotifier<T> asAsync({
-    DataChanged<T>? onData,
-    ErrorCallback? onError,
-  }) {
-    return AsyncNotifier(data: value, onData: onData, onError: onError);
+  AsyncNotifier<T> asAsync({bool? cancelOnError}) {
+    return AsyncNotifier(data: value, cancelOnError: cancelOnError);
   }
 
   /// Listens to [ValueListenable] and returns a [VoidCallback] remover.

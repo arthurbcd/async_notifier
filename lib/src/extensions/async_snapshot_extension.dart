@@ -127,16 +127,29 @@ extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
   /// Returns whether this snapshot is computing and has [data]/[error].
   bool get isReloading => (hasData || hasError) && isLoading;
 
-  /// Maps the data of this snapshot to another type.
-  AsyncSnapshot<R> mapData<R>(
-    R Function(T data) transform,
+  /// Applies [map] when this snapshot [hasData].
+  AsyncSnapshot<R> whenData<R>(
+    R Function(T data) map,
   ) {
     if (hasError) {
       return AsyncSnapshot.withError(connectionState, error!, stackTrace!);
     }
     if (hasData) {
-      return AsyncSnapshot.withData(connectionState, transform(data as T));
+      return AsyncSnapshot.withData(connectionState, map(data as T));
     }
     return AsyncSnapshot<R>.nothing().inState(connectionState);
+  }
+
+  /// Applies [map] when this snapshot [hasError].
+  AsyncSnapshot<T> whenError(
+    Object Function(Object error) map,
+  ) {
+    if (hasError) {
+      return AsyncSnapshot.withError(connectionState, map(error!), stackTrace!);
+    }
+    if (hasData) {
+      return AsyncSnapshot.withData(connectionState, data as T);
+    }
+    return AsyncSnapshot<T>.nothing().inState(connectionState);
   }
 }

@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('AsyncNotifier.value', () {
     int? data = 0;
-    final n = AsyncNotifier<int>(data: data, onData: (d) => data = d);
+    final n = AsyncNotifier<int>(data: data);
     expect(data, 0);
     expect(n.snapshot.data, 0);
     expect(n.snapshot, const AsyncSnapshot.withData(ConnectionState.none, 0));
@@ -17,8 +17,7 @@ void main() {
 
   group('AsyncNotifier.future', () {
     int? data;
-    final n = AsyncNotifier<int>(onData: (d) => data = d);
-    // final b = ValueNotifier(data).asAsync<int>();
+    late final n = AsyncNotifier<int>()..listen((e) => data = e.data);
     test('ConnectionState.none', () async {
       expect(data, null);
       expect(n.snapshot.data, null);
@@ -48,13 +47,14 @@ void main() {
     Object? error;
     StackTrace? stackTrace;
 
-    final n = AsyncNotifier<bool>(
-      onData: (d) => data = d,
-      onError: (e, s) {
-        error = e;
-        stackTrace = s;
-      },
-    );
+    final n = AsyncNotifier<bool>()
+      ..listen(
+        (e) {
+          data = e.data;
+          error = e.error;
+          stackTrace = e.stackTrace;
+        },
+      );
 
     n.future = Future.delayed(const Duration(seconds: 1), () => throw e);
     expect(data, null);
@@ -84,7 +84,7 @@ void main() {
 
   test('AsyncNotifier.future with new future', () async {
     int? data;
-    final n = AsyncNotifier<int>(onData: (d) => data = d);
+    final n = AsyncNotifier<int>()..listen((e) => data = e.data);
 
     // First future.
     n.future = Future.delayed(const Duration(milliseconds: 100), () => 1);
@@ -117,7 +117,7 @@ void main() {
 
   group('AsyncNotifier.stream', () {
     int? data;
-    final n = AsyncNotifier<int>(onData: (d) => data = d);
+    final n = AsyncNotifier<int>()..listen((e) => data = e.data);
     test('ConnectionState.none', () async {
       expect(data, null);
       expect(n.snapshot.data, null);
@@ -156,13 +156,14 @@ void main() {
     StackTrace? stackTrace;
     final controller = StreamController<int>();
 
-    final n = AsyncNotifier<int>(
-      onData: (d) => data = d,
-      onError: (e, s) {
-        error = e;
-        stackTrace = s;
-      },
-    );
+    final n = AsyncNotifier<int>()
+      ..listen(
+        (e) {
+          data = e.data;
+          error = e.error;
+          stackTrace = e.stackTrace;
+        },
+      );
 
     n.stream = controller.stream;
 
@@ -187,8 +188,6 @@ void main() {
 
     controller.addError(e);
     await Future<void>.delayed(const Duration(seconds: 1));
-
-    expect(data, 1);
 
     // as we cannot have both data and error, error replaces data.
     expect(n.snapshot.data, null);
@@ -223,12 +222,11 @@ void main() {
     final error = Error();
     final completer = Completer<void>();
 
-    final n = AsyncNotifier<int>(
-      onData: (d) => data = d,
-      onError: (error, stackTrace) {
-        completer.complete();
-      },
-    );
+    final n = AsyncNotifier<int>()
+      ..listen((e) {
+        data = e.data;
+        if (e.hasError) completer.complete();
+      });
 
     // First stream.
     n.stream = Stream.periodic(const Duration(seconds: 1), (_) => throw error);
@@ -350,13 +348,10 @@ void main() {
     expect(when(), 'error ❌');
 
     state.stream = const Stream.empty();
-    expect(when(), 'loading');
-
-    await state.stream?.toList();
-    expect(when(), 'data: null');
+    expect(when(), 'error ❌'); // because we are skipping loading
 
     state.stream = Stream<String>.error('❌').asBroadcastStream();
-    expect(when(), 'loading');
+    expect(when(), 'error ❌'); // because we are skipping loading
 
     await state.stream!.single.catchError((_) => '');
     expect(when(), 'error ❌');

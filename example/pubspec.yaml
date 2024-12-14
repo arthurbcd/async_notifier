@@ -4,14 +4,13 @@ publish_to: 'none'
 version: 0.1.0
 
 environment:
-  sdk: '>=2.18.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   async_notifier:
     path: ../
   flutter:
     sdk: flutter
-  flutter_riverpod: ^2.6.1
 
 dev_dependencies:
   flutter_test:
