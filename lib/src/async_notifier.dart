@@ -4,10 +4,37 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 /// Signature for a read-only [AsyncSnapshot] listener.
-typedef AsyncListenable<T> = ValueListenable<AsyncSnapshot<T>>;
+mixin AsyncListenable<T> on ValueListenable<AsyncSnapshot<T>>
+    implements AsyncSnapshot<T> {
+  @override
+  AsyncSnapshot<T> inState(ConnectionState state) => value.inState(state);
+
+  @override
+  ConnectionState get connectionState => value.connectionState;
+
+  @override
+  bool get hasData => value.hasData;
+
+  @override
+  T? get data => value.data;
+
+  @override
+  T get requireData => value.requireData;
+
+  @override
+  bool get hasError => value.hasError;
+
+  @override
+  Object? get error => value.error;
+
+  @override
+  StackTrace? get stackTrace => value.stackTrace;
+}
 
 /// A `ValueNotifier<T>` that listens to [Future] and [Stream] snapshot.
-class AsyncNotifier<T> extends ValueNotifier<AsyncSnapshot<T>> {
+// ignore: must_be_immutable
+class AsyncNotifier<T> extends ValueNotifier<AsyncSnapshot<T>>
+    with AsyncListenable<T> {
   /// Creates an `AsyncNotifier` instance with an initial value of type [T].
   ///
   /// The `AsyncNotifier` is designed to work with asynchronous operations that
@@ -41,13 +68,10 @@ class AsyncNotifier<T> extends ValueNotifier<AsyncSnapshot<T>> {
   /// Whether the subscription should be canceled when an error occurs.
   final bool? cancelOnError;
 
+  // async states
   Future<T>? _future;
   Stream<T>? _stream;
   StreamSubscription<T>? _subscription;
-
-  @override
-  @Deprecated('Use `snapshot` instead')
-  AsyncSnapshot<T> get value => super.value;
 
   /// The [Future] currently being listened to.
   Future<T>? get future => _future;
@@ -58,15 +82,15 @@ class AsyncNotifier<T> extends ValueNotifier<AsyncSnapshot<T>> {
   /// Sets the [Future] for this `AsyncNotifier`, updating its state.
   ///
   /// Stop listening to any existing future and listens to the new one.
-  /// - On start: Updates [snapshot] to 'waiting'.
-  /// - On completion: Updates [snapshot] with done state and data.
-  /// - On error: Updates [snapshot] with error.
+  /// - On start: Updates snapshot to 'waiting'.
+  /// - On completion: Updates snapshot with done state and data.
+  /// - On error: Updates snapshot with error.
   ///
-  /// No action is taken if the new future is identical to the current one.
+  /// No action is taken if the new future is identical to the current one.\
   ///
   /// Example:
   /// ```dart
-  /// final _user = AsyncNotifier.late<User>();
+  /// final _user = AsyncNotifier<User>();
   /// _user.future = someUserFuture;
   /// ```
   set future(Future<T>? future) {
@@ -75,7 +99,7 @@ class AsyncNotifier<T> extends ValueNotifier<AsyncSnapshot<T>> {
     _unsubscribe();
 
     _future = future;
-    value = snapshot.inState(ConnectionState.waiting);
+    value = inState(ConnectionState.waiting);
 
     _future?.then(
       (data) {
@@ -92,10 +116,10 @@ class AsyncNotifier<T> extends ValueNotifier<AsyncSnapshot<T>> {
   /// Sets the [Stream] for this `AsyncNotifier`, updating its state.
   ///
   /// Unsubscribes from any existing stream and subscribes to the new one.
-  /// - On start: Updates [snapshot] to 'waiting'.
-  /// - On new data: Updates [snapshot] with active state and data.
-  /// - On error: Updates [snapshot] with error.
-  /// - On done: Updates [snapshot] to done state.
+  /// - On start: Updates snapshot to 'waiting'.
+  /// - On new data: Updates snapshot with active state and data.
+  /// - On error: Updates snapshot with error.
+  /// - On done: Updates snapshot to done state.
   ///
   /// No action is taken if the new stream is identical to the current one.
   ///
@@ -110,7 +134,7 @@ class AsyncNotifier<T> extends ValueNotifier<AsyncSnapshot<T>> {
     _unsubscribe();
 
     _stream = stream;
-    value = snapshot.inState(ConnectionState.waiting);
+    value = inState(ConnectionState.waiting);
 
     _subscription = _stream?.listen(
       cancelOnError: cancelOnError,
@@ -121,17 +145,17 @@ class AsyncNotifier<T> extends ValueNotifier<AsyncSnapshot<T>> {
         value = AsyncSnapshot.withError(ConnectionState.active, e, s);
       },
       onDone: () {
-        value = snapshot.inState(ConnectionState.done);
+        value = inState(ConnectionState.done);
       },
     );
   }
 
-  /// Unsubscribes to existing [Future] or [Stream] and sets [snapshot] to 'none'.
+  /// Unsubscribes to existing [Future] or [Stream] and sets snapshot to 'none'.
   ///
   /// Any data/error will be retained. Just as in Future/Stream builder.
   void cancel() {
     _unsubscribe();
-    value = snapshot.inState(ConnectionState.none);
+    value = inState(ConnectionState.none);
   }
 
   void _unsubscribe() {
@@ -144,10 +168,4 @@ class AsyncNotifier<T> extends ValueNotifier<AsyncSnapshot<T>> {
     _unsubscribe();
     super.dispose();
   }
-}
-
-/// [AsyncListenable] extension.
-extension AsyncListenableExtension<T> on AsyncListenable<T> {
-  /// The current [AsyncSnapshot] of the [AsyncListenable].
-  AsyncSnapshot<T> get snapshot => value;
 }

@@ -4,7 +4,7 @@ import 'package:async_notifier/async_notifier.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(MainApp(notifier: TodosNotifier()));
+  runApp(MainApp(notifier: BooksNotifier()));
 }
 
 class Book {
@@ -29,40 +29,46 @@ class BookRepository {
     const Book(id: 5, title: 'Tome of Stilled Tongue'),
   };
 
-  Future<void> saveBooks(List<Book> books) async {
-    await Future<void>.delayed(const Duration(seconds: 1));
-    _books.clear();
-    _books.addAll(books);
+  Future<void> addBook(Book book) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    _books.add(book);
+  }
+
+  Future<void> removeBook(Book book) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    _books.remove(book);
   }
 
   Stream<List<Book>> streamBooks() async* {
-    await Future<void>.delayed(const Duration(seconds: 1));
+    await Future<void>.delayed(const Duration(milliseconds: 300));
     yield _books.toList();
   }
 
   Future<List<Book>> getBooks() async {
-    await Future<void>.delayed(const Duration(seconds: 1));
+    await Future<void>.delayed(const Duration(milliseconds: 300));
     return _books.toList();
   }
 }
 
-class TodosNotifier extends ChangeNotifier {
-  TodosNotifier() {
+class BooksNotifier extends ChangeNotifier {
+  BooksNotifier() {
     _books.addListener(notifyListeners);
   }
 
   final _repository = BookRepository();
 
-  // Use `>>` to bind your ValueNotifier to this ChangeNotifier
-  // Use ValueNotifier for synchronous data
-  var _ascending = false;
-  StreamSubscription<List<Book>>? _booksSubscription;
-
-  // Use AsyncNotifier for asynchronous data
+  // states
   final _books = AsyncNotifier<List<Book>>();
+  var _ascending = false;
 
-  AsyncSnapshot<List<Book>> get snapshot => _books.snapshot
-      .whenData((list) => isAscending ? list : list.reversed.toList());
+  AsyncSnapshot<List<Book>> get books => _books.whenData(_sorted);
+
+  List<Book> _sorted(List<Book> books) {
+    final list = [...books];
+    list.sort((a, b) =>
+        isAscending ? a.title.compareTo(b.title) : b.title.compareTo(a.title));
+    return list;
+  }
 
   bool get isAscending => _ascending;
 
@@ -71,42 +77,32 @@ class TodosNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  void fetchBooks() {
-    _books.future = _repository.getBooks();
+  Future<void> fetchBooks() => _books.future = _repository.getBooks();
+
+  Stream<void> streamBooks() => _books.stream = _repository.streamBooks();
+
+  Future<void> addBook(Book book) async {
+    await _repository.addBook(book).whenComplete(fetchBooks);
   }
 
-  void streamBooks() {
-    _booksSubscription = _repository.streamBooks().listen(setBooks);
+  Future<void> removeBook(Book book) async {
+    await _repository.removeBook(book).whenComplete(fetchBooks);
   }
-
-  void setBooks(List<Book> books) {
-    _books.future = Future.value(books);
-  }
-
-  void addBook(Book book) {
-    // repository.saveBooks([...books, book]);
-    fetchBooks();
-  }
-
-  void removeBook(Book book) {}
 
   @override
   void dispose() {
     _books.dispose();
-    _booksSubscription?.cancel();
     super.dispose();
   }
 }
 
 class MainApp extends StatelessWidget {
   const MainApp({super.key, required this.notifier});
-
-  final TodosNotifier notifier;
+  final BooksNotifier notifier;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // scaffoldMessengerKey: notifier.messengerkey,
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
@@ -123,31 +119,47 @@ class MainApp extends StatelessWidget {
           ],
         ),
         body: Center(
-          child: RefreshIndicator(
-            onRefresh: () async => notifier.fetchBooks(),
-            child: ListenableBuilder(
-              listenable: notifier,
-              builder: (context, _) {
-                final list = notifier.snapshot.data ?? [];
-                if (notifier.snapshot.isLoading) {
-                  return const CircularProgressIndicator();
-                }
-                return ListView.builder(
-                  itemCount: list.length,
-                  itemBuilder: (context, index) {
-                    final todo = list[index];
+          child: Column(
+            children: [
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: notifier.fetchBooks,
+                  child: ListenableBuilder(
+                    listenable: notifier,
+                    builder: (context, _) {
+                      final list = notifier.books.data ?? [];
+                      if (notifier.books.isLoading &&
+                          !notifier.books.isReloading) {
+                        return const CircularProgressIndicator();
+                      }
+                      return Stack(
+                        children: [
+                          if (notifier.books.isReloading)
+                            const Align(
+                              alignment: Alignment.topCenter,
+                              child: LinearProgressIndicator(),
+                            ),
+                          ListView.builder(
+                            itemCount: list.length,
+                            itemBuilder: (context, index) {
+                              final book = list[index];
 
-                    return ListTile(
-                      title: Text(todo.title),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => notifier.removeBook(todo),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                              return ListTile(
+                                title: Text(book.title),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () => notifier.removeBook(book),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         floatingActionButton: FloatingActionButton(

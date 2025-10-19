@@ -147,9 +147,23 @@ extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
     if (hasError) {
       return AsyncSnapshot.withError(connectionState, map(error!), stackTrace!);
     }
-    if (hasData) {
-      return AsyncSnapshot.withData(connectionState, data as T);
+    return this;
+  }
+
+  /// Returns the error message if the [error] is an [Exception] with a message,
+  /// otherwise returns the string representation of the [error].
+  String? get errorMessage => switch (error) {
+        Exception(:String message) => message,
+        _ => error?.toString(),
+      };
+}
+
+extension on Exception {
+  String? get message {
+    try {
+      return (this as dynamic).message?.toString();
+    } catch (_) {
+      return null;
     }
-    return AsyncSnapshot<T>.nothing().inState(connectionState);
   }
 }

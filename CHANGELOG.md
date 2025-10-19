@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.0 - Oct 19, 2025
+
+- Changes `AsyncListenable` to a mixin that implements `AsyncSnapshot`.
+- Changes `AsyncNotifier` to extend with `AsyncListenable`.
+- Added `AsyncSnapshot.errorMessage`.
+- Removes `AsyncListenable.snapshot`. Use itself instead.
+
 ## 0.5.0 - Dec 14, 2024
 
 - Simplifies `AsyncNotifier`.

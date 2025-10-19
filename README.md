@@ -24,18 +24,18 @@ void main() {
   counter.future = Future.value(42);
   counter.stream = Stream.fromIterable([1, 2, 3]);
 
-  // And get its snapshot.
-  final AsyncSnapshot<int> snapshot = counter.snapshot;
+  // The notifier itself implements AsyncSnapshot.
+  counter.requireData
+  counter.hasData
+  counter.hasError
+  counter.error
+  counter.stackTrace
 
   // Check its states with extensions:
-  snapshot.isLoading
-  snapshot.isReloading
-  snapshot.requireData
-  snapshot.hasData
-  snapshot.hasError
-  snapshot.hasNone
-  snapshot.error
-  snapshot.stackTrace
+  counter.isLoading
+  counter.isReloading
+  counter.hasNone
+  counter.errorMessage
 
   // Control its future or stream:
   counter.cancel(); // works for future!
@@ -49,9 +49,9 @@ void main() {
   );
 
   // Or even:
-  final result = switch (snapshot) {
+  final result = switch (counter) {
     AsyncSnapshot(:var data?) => 'Data $data',
-    AsyncSnapshot(:var error?) => 'Error $error', 
+    AsyncSnapshot(:var error?) => 'Error $error',
     _ => 'Loading',
   }
 }
