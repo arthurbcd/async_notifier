@@ -61,7 +61,7 @@ class BooksNotifier extends ChangeNotifier {
   final _books = AsyncNotifier<List<Book>>();
   var _ascending = false;
 
-  AsyncSnapshot<List<Book>> get books => _books.whenData(_sorted);
+  AsyncSnapshot<List<Book>> get books => _books.snapshot.whenData(_sorted);
 
   List<Book> _sorted(List<Book> books) {
     final list = [...books];

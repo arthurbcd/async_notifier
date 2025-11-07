@@ -1,4 +1,9 @@
+// ignore_for_file: public_member_api_docs
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import '../../async_notifier.dart';
 
 /// Extension on [AsyncSnapshot] to handle its various states
 extension AsyncSnapshotExtension<T> on AsyncSnapshot<T> {
@@ -166,4 +171,18 @@ extension on Exception {
       return null;
     }
   }
+}
+
+/// Extension for [AsyncListenable].
+extension AsyncListenableExtension<T> on ValueListenable<AsyncSnapshot<T>> {
+  bool get isLoading => value.isLoading;
+  bool get isReloading => value.isReloading;
+  bool get hasData => value.hasData;
+  bool get hasError => value.hasError;
+  bool get hasNone => value.hasNone;
+  String? get errorMessage => value.errorMessage;
+  T? get data => value.data;
+  T get requireData => value.requireData;
+  Object? get error => value.error;
+  StackTrace? get stackTrace => value.stackTrace;
 }
